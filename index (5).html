@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Name the Hardest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Lexend+Deca:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* layout: arcade-style top bar with three game tabs; each game fills one centered column */
+:root{
+  --bg:#0a0c13; --panel:#131725; --panel-2:#1a1f31; --line:#272e45; --fg:#eef1f8; --muted:#8a93ab;
+  --gold:#f0ac2d; --good:#3ad67c; --near:#f2c94c; --bad:#ff4d63; --up:#ff6a4d; --down:#3fb4ff;
+  --mythic:#ff3df5; --legend:#f0ac2d; --epic:#a259ff; --rare:#3fb4ff; --uncommon:#3ad67c; --common:#9aa3b8;
+  --display:"Lilita One","Arial Black",system-ui,sans-serif;
+  --body:"Lexend Deca",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);
+  background-image:radial-gradient(900px 420px at 50% -8%,#1c2242 0%,transparent 62%);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+.top{max-width:860px;margin:0 auto;padding-block:18px 14px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.top h1{margin:0;font:400 28px/1 var(--display);letter-spacing:.5px}
+.top h1 b{color:var(--gold);font-weight:400}
+button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+main{max-width:860px;margin:0 auto}
+.game{display:flex;flex-direction:column;gap:18px;padding-top:10px}
+.head h2{margin:0;font:400 32px/1.05 var(--display)}
+.head p{margin:6px 0 0;color:var(--muted);line-height:1.5;max-width:62ch}
+.panel{background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:18px;padding:22px}
+.btn{appearance:none;border:0;border-radius:12px;padding:13px 22px;font:400 20px/1 var(--display);cursor:pointer;background:var(--gold);color:#14110a}
+.btn:hover{filter:brightness(1.07)} .btn:disabled{opacity:.4;cursor:default;filter:none}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line);font:500 14px var(--body)}
+.muted{color:var(--muted)}
+input[type=text]{width:100%;min-width:0;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:13px 14px;font:500 16px var(--body)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row > input{flex:1 1 220px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.stat span{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.stat strong{font:400 24px/1.2 var(--display);font-variant-numeric:tabular-nums}
+
+/* name it */
+.q{font:400 clamp(24px,4vw,32px)/1.15 var(--display);margin:0;text-wrap:balance}
+.q b{color:var(--gold);font-weight:400}
+.qmeta{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+.feedback{display:flex;flex-direction:column;gap:6px;line-height:1.5}
+.feedback .pts{font:400 30px/1 var(--display)}
+.good{color:var(--good)} .bad{color:var(--bad)} .near{color:var(--near)}
+.answers{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{font-size:12.5px;padding:4px 9px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--muted)}
+.chip.you{border-color:var(--gold);color:var(--fg)}
+.chip.top{border-color:var(--good);color:var(--good)}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>Name the <b>Hardest</b></h1>
+</div>
+
+<main>
+  <!-- NAME IT -->
+  <section class="game" id="g-name">
+    <div class="head"><p>Name a level that fits the prompt. Any correct answer scores, but the hardest one that fits scores 100. Spelling has to be right, but spaces and capitals don't matter.</p></div>
+    <div class="panel" style="display:flex;flex-direction:column;gap:16px">
+      <div class="qmeta"><span id="nRound">Round 1 of 5</span><span>Score <b id="nScore" style="color:var(--fg)">0</b></span></div>
+      <p class="q" id="nQ"></p>
+      <form class="row" id="nForm" autocomplete="off">
+        <input type="text" id="nInput" autocomplete="off" spellcheck="false" placeholder="Type a level name" aria-label="Your answer">
+        <button class="btn" id="nSubmit" type="submit">Answer</button>
+      </form>
+      <div class="feedback" id="nFeedback" hidden></div>
+      <div class="row" id="nNextRow" hidden><button class="btn" id="nNext" type="button">Next</button></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>Best game</span><strong id="nBest">0</strong></div>
+      <div class="stat"><span>Max per game</span><strong>500</strong></div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+const LV = [{"n":"The Abyss","r":1,"c":["Gamer862"],"v":"Gamer862","d":"Extreme","w":2},{"n":"Planum Astrale","r":2,"c":["Ke2"],"v":"Gamer862","d":"Extreme","w":2},{"n":"HAIL TO THE THIEF","r":3,"c":["beeguy"],"v":"beeguy","d":"Extreme","w":2},{"n":"Sakupenhouse","r":4,"c":["Syne"],"v":"Emmber","d":"Extreme","w":4},{"n":"Sixx Sevvend","r":5,"c":["Syne"],"v":"Emmber","d":"Extreme","w":4},{"n":"Heatwave","r":6,"c":["Quacc"],"v":"miokii","d":"Extreme","w":4},{"n":"No Cure","r":7,"c":["Nange"],"v":"Nange","d":"Extreme","w":5},{"n":"rare animal","r":8,"c":["beeguy"],"v":"beeguy","d":"Extreme","w":3},{"n":"Goldenfyre Challenge","r":9,"c":["Nange"],"v":"Nange","d":"Extreme","w":4},{"n":"Going Home","r":10,"c":["Firelia"],"v":"Firelia","d":"Extreme","w":3},{"n":"Gilt Chin","r":11,"c":["Firelia"],"v":"Firelia","d":"Extreme","w":1},{"n":"GLEAMING","r":12,"c":["EpikGuy"],"v":"EpikGuy","d":"Extreme","w":2},{"n":"Octane","r":13,"c":["Emmber"],"v":"Emmber","d":"Extreme","w":4},{"n":"Gate","r":14,"c":["Firelia"],"v":"Firelia","d":"Extreme","w":3},{"n":"The Super Catguy","r":15,"c":["Beeguy"],"v":"Beeguy","d":"Extreme","w":2},{"n":"EGG NEVER CLEAR RE","r":16,"c":["EpikGuy"],"v":"Gamer862","d":"Insane","w":2},{"n":"Pyrarrmaniac","r":17,"c":["Nange","luna"],"v":"Nange","d":"Insane","w":4},{"n":"BRIGHTNESS","r":18,"c":["EpikGuy"],"v":"Gamer862","d":"Insane","w":3},{"n":"MIOKII ALWAYS CLEAR","r":19,"c":["3Doffisa"],"v":"3Doffisa","d":"Insane","w":8},{"n":"The City Of Battle","r":20,"c":["Xc4pk"],"v":"Xc4pk","d":"Insane","w":4},{"n":"Petal","r":21,"c":["beeguy"],"v":"beeguy","d":"Insane","w":2},{"n":"Plasma Pulse X","r":22,"c":["Firelia"],"v":"Firelia","d":"Insane","w":2},{"n":"Say So","r":23,"c":["pure"],"v":"GDNOBRAIN","d":"Insane","w":5},{"n":"PolarBear","r":24,"c":["Firelia"],"v":"Firelia","d":"Insane","w":3},{"n":"Doodle Rush","r":25,"c":["beeguy"],"v":"beeguy","d":"Insane","w":4},{"n":"Limbotism","r":26,"c":["Unnatural"],"v":"Unnatural","d":"Insane","w":4},{"n":"Cloth Of Roses","r":27,"c":["Electrow"],"v":"Electrow","d":"Insane","w":3},{"n":"colon three circles","r":28,"c":["Cheese"],"v":"Cheese","d":"Insane","w":5},{"n":"Blossom Sea","r":29,"c":["Firelia"],"v":"Firelia","d":"Insane","w":5},{"n":"Jump For Me","r":30,"c":["Xc4pk"],"v":"Xc4pk","d":"Insane","w":6},{"n":"Octagon Force","r":31,"c":["JPCPro"],"v":"JPCPro","d":"Insane","w":3},{"n":"Interstellrarr","r":32,"c":["syne"],"v":"geo","d":"Hard","w":2},{"n":"Caesium Factorial 3","r":33,"c":["JPCPro"],"v":"JPCPro","d":"Hard","w":4},{"n":"Synetosign Leashed","r":34,"c":["Alya"],"v":"Alya","d":"Hard","w":1},{"n":"Caesium Factorial 1","r":35,"c":["JPCPro"],"v":"JPCPro","d":"Hard","w":5},{"n":"In Its Right Place","r":36,"c":["Beeguy"],"v":"Beeguy","d":"Hard","w":5},{"n":"CUBED","r":37,"c":["JPCPro"],"v":"JPCPro","d":"Hard","w":2},{"n":"XENOSCAPE","r":38,"c":["hortus"],"v":"Moss","d":"Hard","w":6},{"n":"planetrarrium","r":39,"c":["Luna"],"v":"Nange","d":"Hard","w":3},{"n":"Tormented Sentience","r":40,"c":["Goldenfyre101"],"v":"Goldenfyre101","d":"Hard","w":1},{"n":"Stroll","r":41,"c":["Nange"],"v":"Nange","d":"Hard","w":5},{"n":"Every End Leashed","r":42,"c":["syne"],"v":"Emmber","d":"Hard","w":3},{"n":"Save Me","r":43,"c":["Electrow"],"v":"Electrow","d":"Hard","w":3},{"n":"GLORINESS","r":44,"c":["EpikGuy"],"v":"EpikGuy","d":"Hard","w":9},{"n":"lancer deltarune","r":45,"c":["beeguy"],"v":"beeguy","d":"Insane","w":5},{"n":"Deadmans Handle","r":46,"c":["luna"],"v":"Goldenfyre101","d":"Hard","w":10},{"n":"Aurora","r":47,"c":["Emmber"],"v":"Emmber","d":"Hard","w":4},{"n":"My Meat","r":48,"c":["Gamer862"],"v":"Gamer862","d":"Hard","w":6},{"n":"Firewall","r":49,"c":["Syne"],"v":"beeguy","d":"Hard","w":5},{"n":"Sonicbreaker","r":50,"c":["Hyperfixation66"],"v":"AltifyNeverDies","d":"Hard","w":2},{"n":"Deep End","r":51,"c":["Electrow"],"v":"Electrow","d":"Hard","w":6},{"n":"Dancing Until I Fall","r":52,"c":["beeguy"],"v":"beeguy","d":"Hard","w":2},{"n":"Alti Adventures","r":53,"c":["AltifyNeverDies"],"v":"AltifyNeverDies","d":"Hard","w":4},{"n":"Blank Planet","r":54,"c":["RecorderChannel2"],"v":"Nange","d":"Medium","w":7},{"n":"limbo but rarr ig","r":55,"c":["Luna"],"v":"Luna","d":"Hard","w":2},{"n":"Processed Machine","r":56,"c":["spec"],"v":"spec","d":"Medium","w":7},{"n":"Stalemate","r":57,"c":["GooeyG"],"v":"Emmber","d":"Medium","w":7},{"n":"Budgetscapes","r":58,"c":["Beeguy"],"v":"Nange","d":"Medium","w":4},{"n":"No Surprises","r":59,"c":["EpikGuy"],"v":"Gamer862","d":"Medium","w":7},{"n":"Stratus","r":60,"c":["AltifyNeverDies"],"v":"AltifyNeverDies","d":"Medium","w":3},{"n":"growing on me","r":61,"c":["qwerty2048"],"v":"qwerty2048","d":"Medium","w":8},{"n":"Genesis","r":62,"c":["altifyneverdies"],"v":"Xc4pk","d":"Medium","w":6},{"n":"Only You","r":63,"c":["Electrow"],"v":"Electrow","d":"Medium","w":1},{"n":"SHINING","r":64,"c":["EpikGuy"],"v":"EpikGuy","d":"Medium","w":11},{"n":"Caesium Factorial 2","r":65,"c":["JPCPro"],"v":"JPCPro","d":"Medium","w":7},{"n":"ViPriN Spider","r":66,"c":["altifyneverdies"],"v":"Nange","d":"Easy","w":6},{"n":"Cries For The Lonely","r":67,"c":["Syne","Alya"],"v":"Alya","d":"Easy","w":1},{"n":"Duality","r":68,"c":["Unnatural"],"v":"Unnatural","d":"Medium","w":1},{"n":"Bananas","r":69,"c":["Nange"],"v":"Nange","d":"Easy","w":2},{"n":"Paparazzi","r":70,"c":["Electrow"],"v":"Electrow","d":"Easy","w":3},{"n":"Fast Travel","r":71,"c":["Kimichii"],"v":"Kimichii","d":"Medium","w":4},{"n":"the killer","r":72,"c":["beeguy","blox"],"v":"beeguy","d":"Medium","w":5},{"n":"Tung Wave Trials","r":73,"c":["syne"],"v":"miokii","d":"Easy","w":0},{"n":"Return End","r":74,"c":["Absoluteinf1"],"v":"Absoluteinf1","d":"Easy","w":6},{"n":"Happy Birthday Goldie","r":75,"c":["Quacc","luna","CatGeo","Fligoogigoo"],"v":"Quacc","d":"Easy","w":13},{"n":"1 Up","r":76,"c":["Absoluteinf1"],"v":"Absoluteinf1","d":"Easy","w":2},{"n":"Disco Dance","r":77,"c":["Xc4pk"],"v":"Xc4pk","d":"Medium","w":8},{"n":"Chess","r":78,"c":["3Doffisa"],"v":"3Doffisa","d":"Easy","w":14},{"n":"Kinetic Disorption","r":79,"c":["Goldenfyre101"],"v":"Kimichii","d":"Easy","w":3},{"n":"TO be complete","r":80,"c":["beeguy"],"v":"beeguy","d":"Easy","w":5},{"n":"The Golden","r":81,"c":["Alya"],"v":"Alya","d":"Easy","w":2},{"n":"Chaos Construct","r":82,"c":["xxLettucex"],"v":"xxLettucex","d":"Easy","w":10},{"n":"Future Circles","r":83,"c":["Hyperfixation66"],"v":"Hyperfixation66","d":"Easy","w":11},{"n":"Cut You Off","r":84,"c":["Quacc"],"v":"Quacc","d":"Easy","w":12},{"n":"Moonship Welters","r":85,"c":["Goldenfyre101"],"v":"Goldenfyre101","d":"Easy","w":15},{"n":"LARP","r":86,"c":["spec"],"v":"spec","d":"Easy","w":7},{"n":"Thumper","r":87,"c":["Syne"],"v":"Syne","d":"Easy","w":11},{"n":"Darkness","r":88,"c":["Electrow"],"v":"Nange","d":"Easy","w":10},{"n":"Radiation Wave","r":89,"c":["WIZARD"],"v":"WIZARD","d":"Easy","w":10},{"n":"Runaway","r":90,"c":["Electrow"],"v":"Nange","d":"Easy","w":18}];
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const store = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+const norm = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+const byNorm = new Map(LV.map(l => [norm(l.n), l]));
+const N = LV.length;
+const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
+function untilMidnight(){ const n = new Date(), m = new Date(n); m.setHours(24,0,0,0); const s = Math.floor((m-n)/1000); return Math.floor(s/3600)+'h '+String(Math.floor(s%3600/60)).padStart(2,'0')+'m'; }
+
+/* ---------- NAME THE HARDEST ---------- */
+const groups = (key) => { const m = new Map(); LV.forEach(l => key(l).forEach(k => { if (!k) return; const id = k.toLowerCase(); if (!m.has(id)) m.set(id, { label:k, levels:[] }); m.get(id).levels.push(l); })); return [...m.values()]; };
+const PROMPTS = [
+  ...groups(l => [l.n[0].toUpperCase()]).filter(g => g.levels.length >= 3 && /[A-Z]/.test(g.label)).map(g => ({ text:`Name a level that starts with <b>${esc(g.label)}</b>`, fits:g.levels })),
+  ...groups(l => [l.v]).filter(g => g.levels.length >= 5).map(g => ({ text:`Name a level verified by <b>${esc(g.label)}</b>`, fits:g.levels })),
+  ...groups(l => l.c).filter(g => g.levels.length >= 3).map(g => ({ text:`Name a level created by <b>${esc(g.label)}</b>`, fits:g.levels })),
+];
+let nRound = 0, nScore = 0, nQs = [], nBest = store.get('gg-name-best', 0);
+function shuffle(a){ a = a.slice(); for (let i = a.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; }
+function nStart(){ nQs = shuffle(PROMPTS).slice(0,5); nRound = 0; nScore = 0; nShow(); }
+function nShow(){
+  const q = nQs[nRound];
+  $('nRound').textContent = `Round ${nRound+1} of 5`; $('nScore').textContent = nScore; $('nBest').textContent = nBest;
+  $('nQ').innerHTML = q.text; $('nInput').value = ''; $('nInput').disabled = false; $('nSubmit').disabled = false;
+  $('nFeedback').hidden = true; $('nNextRow').hidden = true; $('nInput').focus({ preventScroll:true });
+}
+$('nForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const raw = $('nInput').value.trim(); if (!raw) return;
+  const l = byNorm.get(norm(raw)), q = nQs[nRound];
+  const fb = $('nFeedback');
+  if (!l) { fb.hidden = false; fb.innerHTML = `<span class="bad">That's not a level on the list. Try again.</span>`; return; }
+  const sorted = q.fits.slice().sort((a,b) => a.r - b.r);
+  const idx = sorted.indexOf(l);
+  let pts = 0, line;
+  if (idx === -1) line = `<span class="pts bad">+0</span><span><b>${esc(l.n)}</b> doesn't fit.</span>`;
+  else {
+    pts = Math.round(100 * (sorted.length - idx) / sorted.length);
+    line = idx === 0 ? `<span class="pts good">+100</span><span>Perfect! <b>${esc(l.n)}</b> (#${l.r}) is the hardest that fits.</span>`
+                     : `<span class="pts near">+${pts}</span><span><b>${esc(l.n)}</b> (#${l.r}) fits. It's the #${idx+1} hardest of ${sorted.length}.</span>`;
+  }
+  nScore += pts;
+  fb.hidden = false;
+  fb.innerHTML = line + `<div class="answers">${sorted.map((s,i) => `<span class="chip ${i===0?'top':''} ${s===l?'you':''}">#${s.r} ${esc(s.n)}</span>`).join('')}</div>`;
+  $('nInput').disabled = true; $('nSubmit').disabled = true; $('nScore').textContent = nScore;
+  const last = nRound === 4;
+  if (last && nScore > nBest) { nBest = nScore; store.set('gg-name-best', nBest); }
+  $('nNext').textContent = last ? `Done · ${nScore}/500 · Play again` : 'Next';
+  $('nNextRow').hidden = false; $('nNext').focus({ preventScroll:true });
+});
+$('nNext').addEventListener('click', () => { if (nRound === 4) nStart(); else { nRound++; nShow(); } });
+nStart();
+
+</script>
+</body>
+</html>
