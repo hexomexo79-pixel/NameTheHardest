@@ -45,7 +45,10 @@ input[type=text]{width:100%;min-width:0;background:var(--bg);color:var(--fg);bor
 
 /* name it */
 .q{font:400 clamp(24px,4vw,32px)/1.15 var(--display);margin:0;text-wrap:balance}
-.q b{color:var(--gold);font-weight:400}
+.q b{color:var(--k,var(--gold));font-weight:400}
+.recap b{color:var(--k,var(--fg))}
+.k-start{--k:#3fb4ff} .k-diff{--k:#b07bff} .k-verified{--k:#3ad67c} .k-created{--k:#ff8a3d} .k-beaten{--k:#ff5fb4}
+.tag{display:inline-block;font:700 11px/1 var(--body);letter-spacing:.1em;text-transform:uppercase;padding:5px 9px;border-radius:999px;color:var(--k);border:1px solid color-mix(in srgb,var(--k) 55%,transparent);background:color-mix(in srgb,var(--k) 12%,transparent)}
 .qmeta{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;letter-spacing:.06em;text-transform:uppercase}
 .feedback{display:flex;flex-direction:column;gap:6px;line-height:1.5}
 .feedback .pts{font:400 30px/1 var(--display)}
@@ -119,6 +122,7 @@ input[type=text]{width:100%;min-width:0;background:var(--bg);color:var(--fg);bor
       <div class="countwrap" style="display:flex;flex-direction:column;gap:16px">
         <div class="count" id="count" hidden>3</div>
         <div class="qmeta"><span id="pMode">Daily</span><span id="pCount">0 answered</span></div>
+        <div><span class="tag" id="pTag" hidden></span></div>
         <p class="q" id="pQ">&nbsp;</p>
         <form class="row" id="pForm" autocomplete="off">
           <input type="text" id="pInput" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="Type a level name" aria-label="Your answer">
@@ -170,15 +174,16 @@ const PL = [{"u":"Cheese","b":[4,5,6,7,8,9,10,13,14,18,19,20,25,26,28,29,30,35,3
 const DIFF = { Extreme:'an <b>Extreme</b> Demon', Insane:'an <b>Insane</b> Demon', Hard:'a <b>Hard</b> Demon', Medium:'a <b>Medium</b> Demon', Easy:'an <b>Easy</b> Demon' };
 const notObvious = q => Math.min(...q.fits.map(l => l.r)) > 5;
 const PROMPTS = [
-  ...groups(l => [l.n[0].toUpperCase()]).filter(g => g.levels.length >= 2 && /[A-Z]/.test(g.label) && !g.levels.some(l => l.r === 1)).map(g => ({ text:`Name a level that starts with <b>${esc(g.label)}</b>`, fits:g.levels })),
+  ...groups(l => [l.n[0].toUpperCase()]).filter(g => g.levels.length >= 2 && /[A-Z]/.test(g.label) && !g.levels.some(l => l.r === 1)).map(g => ({ cat:'start', text:`Name a level that starts with <b>${esc(g.label)}</b>`, fits:g.levels })),
   ...[
-    ...groups(l => [l.d]).map(g => ({ text:`Name ${DIFF[g.label] || esc(g.label)}`, fits:g.levels })),
-    ...groups(l => [l.v]).filter(g => g.levels.length >= 5).map(g => ({ text:`Name a level verified by <b>${esc(g.label)}</b>`, fits:g.levels })),
-    ...groups(l => l.c).filter(g => g.levels.length >= 3).map(g => ({ text:`Name a level created by <b>${esc(g.label)}</b>`, fits:g.levels })),
+    ...groups(l => [l.d]).map(g => ({ cat:'diff', text:`Name ${DIFF[g.label] || esc(g.label)}`, fits:g.levels })),
+    ...groups(l => [l.v]).filter(g => g.levels.length >= 5).map(g => ({ cat:'verified', text:`Name a level verified by <b>${esc(g.label)}</b>`, fits:g.levels })),
+    ...groups(l => l.c).filter(g => g.levels.length >= 3).map(g => ({ cat:'created', text:`Name a level created by <b>${esc(g.label)}</b>`, fits:g.levels })),
   ].filter(notObvious),
-  ...PL.map(p => ({ text:`Name a level <b>${esc(p.u)}</b> has beaten`, fits:p.b.map(r => LV[r-1]) })),
+  ...PL.map(p => ({ cat:'beaten', text:`Name a level <b>${esc(p.u)}</b> has beaten`, fits:p.b.map(r => LV[r-1]) })),
 ].filter((q, i, all) => { const key = q.fits.map(l => l.r).sort((a,b) => a-b).join(); return all.findIndex(o => o.fits.map(l => l.r).sort((a,b) => a-b).join() === key) === i; });
-PROMPTS.forEach(q => q.sorted = q.fits.slice().sort((a,b) => a.r - b.r));
+const CATS = { start:'Letter', diff:'Difficulty', verified:'Verifier', created:'Creator', beaten:'Player' };
+PROMPTS.forEach(q => { q.sorted = q.fits.slice().sort((a,b) => a.r - b.r); q.text = `<span class="k-${q.cat}">${q.text}</span>`; });
 
 const TIME = 30, PENALTY = 3;
 
@@ -226,7 +231,7 @@ function start(m){
   mode = m; qs = queue(m === 'daily' ? rng('nth-' + today()) : Math.random); qi = 0; score = 0; left = TIME; log = []; pending = null;
   if (m === 'daily') store.set('nth-daily-' + today(), { score: 0, answered: 0, started: true });  // a refresh can't reroll it
   $('pMode').textContent = m === 'daily' ? 'Daily · ' + today() : 'Practice';
-  $('pScore').textContent = 0; $('pCount').textContent = '0 answered'; $('pFlash').innerHTML = ''; $('pQ').innerHTML = '&nbsp;';
+  $('pScore').textContent = 0; $('pCount').textContent = '0 answered'; $('pFlash').innerHTML = ''; $('pQ').innerHTML = '&nbsp;'; $('pTag').hidden = true;
   paintTime(); $('pInput').value = ''; $('pInput').disabled = true; $('pSubmit').disabled = true;
   show('sPlay');
   const c = $('count'); let n = 3; c.hidden = false;
@@ -247,7 +252,7 @@ function paintTime(){
   $('tBar').style.transform = `scaleX(${left / TIME})`;
   $('tWrap').classList.toggle('low', left <= 5 && running);
 }
-function nextQ(advance = true){ if (advance) qi++; $('pQ').innerHTML = qs[qi].text; $('pInput').value = ''; pending = null; }
+function nextQ(advance = true){ if (advance) qi++; $('pQ').innerHTML = qs[qi].text; $('pTag').className = 'tag k-' + qs[qi].cat; $('pTag').textContent = CATS[qs[qi].cat]; $('pTag').hidden = false; $('pInput').value = ''; pending = null; }
 
 function answer(l){
   const q = qs[qi], idx = q.sorted.indexOf(l);
