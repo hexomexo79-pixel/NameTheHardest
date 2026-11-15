@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Name the Hardest</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -55,34 +55,97 @@ input[type=text]{width:100%;min-width:0;background:var(--bg);color:var(--fg);bor
 .chip.you{border-color:var(--gold);color:var(--fg)}
 .chip.top{border-color:var(--good);color:var(--good)}
 
+
+/* blitz */
+.timer{display:flex;align-items:center;gap:12px}
+.timer strong{font:400 34px/1 var(--display);font-variant-numeric:tabular-nums;min-width:2.2ch}
+.timer.low strong{color:var(--bad)}
+.bar{flex:1;height:8px;border-radius:99px;background:var(--panel);border:1px solid var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gold);transform-origin:left;transition:transform .1s linear}
+.timer.low .bar i{background:var(--bad)}
+.scorebig{font:400 30px/1 var(--display);color:var(--gold);font-variant-numeric:tabular-nums}
+.playtop{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.playtop .timer{flex:1}
+.flash{min-height:26px;line-height:1.4}
+.flash .pts{font:400 22px/1 var(--display);margin-right:8px}
+.penalty{color:var(--bad);font:400 18px var(--display);margin-left:6px}
+.dym{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.dym button{appearance:none;font:500 14px var(--body);padding:6px 12px;border-radius:999px;border:1px solid var(--gold);background:transparent;color:var(--fg);cursor:pointer}
+.dym button:first-of-type{background:var(--gold);color:#14110a}
+.countwrap{position:relative}
+.count{position:absolute;inset:-6px;display:grid;place-items:center;background:color-mix(in srgb,var(--panel) 92%,transparent);border-radius:14px;z-index:2;font:400 72px/1 var(--display);color:var(--gold)}
+.count.pop{animation:pop .9s ease-out}
+@keyframes pop{0%{transform:scale(1.35);opacity:0}25%{transform:scale(1);opacity:1}100%{opacity:1}}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.mode{display:flex;flex-direction:column;gap:8px;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;color:var(--fg);cursor:pointer;font:inherit}
+.mode:hover:not(:disabled){border-color:var(--gold)}
+.mode:disabled{cursor:default;opacity:.75}
+.mode b{font:400 24px/1 var(--display)}
+.mode span{color:var(--muted);font-size:14px;line-height:1.45}
+.endscore{font:400 64px/1 var(--display);color:var(--gold);margin:0}
+.recap{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.recap li{display:grid;grid-template-columns:52px 1fr;gap:10px;align-items:start;padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;line-height:1.4;font-size:14px}
+.recap .pts{font:400 20px/1.2 var(--display)}
+.recap .muted{font-size:13px}
+
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
+
 <div class="top">
   <h1>Name the <b>Hardest</b></h1>
 </div>
 
 <main>
-  <!-- NAME IT -->
-  <section class="game" id="g-name">
-    <div class="head"><p>Name a level that fits the prompt. Any correct answer scores, but the hardest one that fits scores 100. Spelling has to be right, but spaces and capitals don't matter.</p></div>
-    <div class="panel" style="display:flex;flex-direction:column;gap:16px">
-      <div class="qmeta"><span id="nRound">Round 1 of 5</span><span>Score <b id="nScore" style="color:var(--fg)">0</b></span></div>
-      <p class="q" id="nQ"></p>
-      <form class="row" id="nForm" autocomplete="off">
-        <input type="text" id="nInput" autocomplete="off" spellcheck="false" placeholder="Type a level name" aria-label="Your answer">
-        <button class="btn" id="nSubmit" type="submit">Answer</button>
-      </form>
-      <div class="feedback" id="nFeedback" hidden></div>
-      <div class="row" id="nNextRow" hidden><button class="btn" id="nNext" type="button">Next</button></div>
+  <section class="game">
+    <div class="head"><p>You have <b>30 seconds</b>. Name a level that fits each prompt. The hardest level that fits is worth 100, and easier ones that fit are worth less. Naming a level that doesn't fit costs you 3 seconds. Spaces and capitals don't matter.</p></div>
+
+    <!-- start -->
+    <div class="panel" id="sStart">
+      <div class="modes">
+        <button class="mode" id="mDaily" type="button"><b>Daily</b><span id="mDailyTxt">Same prompts for everyone today. One try, so you can compare scores.</span></button>
+        <button class="mode" id="mPractice" type="button"><b>Practice</b><span>Random prompts. Play as many times as you want.</span></button>
+      </div>
     </div>
+
+    <!-- play -->
+    <div class="panel" id="sPlay" hidden style="display:flex;flex-direction:column;gap:16px">
+      <div class="playtop">
+        <div class="timer" id="tWrap"><strong id="tNum">30</strong><div class="bar"><i id="tBar"></i></div></div>
+        <div class="scorebig" id="pScore">0</div>
+      </div>
+      <div class="countwrap" style="display:flex;flex-direction:column;gap:16px">
+        <div class="count" id="count" hidden>3</div>
+        <div class="qmeta"><span id="pMode">Daily</span><span id="pCount">0 answered</span></div>
+        <p class="q" id="pQ">&nbsp;</p>
+        <form class="row" id="pForm" autocomplete="off">
+          <input type="text" id="pInput" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="Type a level name" aria-label="Your answer">
+          <button class="btn" id="pSubmit" type="submit">Answer</button>
+        </form>
+        <div class="flash" id="pFlash" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <!-- end -->
+    <div class="panel" id="sEnd" hidden style="display:flex;flex-direction:column;gap:16px">
+      <div class="qmeta"><span id="eMode">Daily</span><span id="eSub"></span></div>
+      <p class="endscore" id="eScore">0</p>
+      <p class="muted" id="eLine" style="margin:0"></p>
+      <div class="row">
+        <button class="btn" id="eAgain" type="button">Practice</button>
+        <button class="btn ghost" id="eShare" type="button" hidden>Copy score</button>
+        <button class="btn ghost" id="eBack" type="button">Back</button>
+      </div>
+      <ul class="recap" id="eRecap"></ul>
+    </div>
+
     <div class="stats">
-      <div class="stat"><span>Best game</span><strong id="nBest">0</strong></div>
-      <div class="stat"><span>Max per game</span><strong>500</strong></div>
+      <div class="stat"><span>Today's daily</span><strong id="stDaily">–</strong></div>
+      <div class="stat"><span>Best practice</span><strong id="stBest">0</strong></div>
+      <div class="stat"><span>Best daily</span><strong id="stBestDaily">0</strong></div>
     </div>
   </section>
-
 </main>
 
 <script>
@@ -99,49 +162,147 @@ const N = LV.length;
 const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
 function untilMidnight(){ const n = new Date(), m = new Date(n); m.setHours(24,0,0,0); const s = Math.floor((m-n)/1000); return Math.floor(s/3600)+'h '+String(Math.floor(s%3600/60)).padStart(2,'0')+'m'; }
 
-/* ---------- NAME THE HARDEST ---------- */
+/* ---------- NAME THE HARDEST: 30 SECOND BLITZ ---------- */
 const groups = (key) => { const m = new Map(); LV.forEach(l => key(l).forEach(k => { if (!k) return; const id = k.toLowerCase(); if (!m.has(id)) m.set(id, { label:k, levels:[] }); m.get(id).levels.push(l); })); return [...m.values()]; };
 const PROMPTS = [
   ...groups(l => [l.n[0].toUpperCase()]).filter(g => g.levels.length >= 3 && /[A-Z]/.test(g.label)).map(g => ({ text:`Name a level that starts with <b>${esc(g.label)}</b>`, fits:g.levels })),
   ...groups(l => [l.v]).filter(g => g.levels.length >= 5).map(g => ({ text:`Name a level verified by <b>${esc(g.label)}</b>`, fits:g.levels })),
   ...groups(l => l.c).filter(g => g.levels.length >= 3).map(g => ({ text:`Name a level created by <b>${esc(g.label)}</b>`, fits:g.levels })),
-];
-let nRound = 0, nScore = 0, nQs = [], nBest = store.get('gg-name-best', 0);
-function shuffle(a){ a = a.slice(); for (let i = a.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; }
-function nStart(){ nQs = shuffle(PROMPTS).slice(0,5); nRound = 0; nScore = 0; nShow(); }
-function nShow(){
-  const q = nQs[nRound];
-  $('nRound').textContent = `Round ${nRound+1} of 5`; $('nScore').textContent = nScore; $('nBest').textContent = nBest;
-  $('nQ').innerHTML = q.text; $('nInput').value = ''; $('nInput').disabled = false; $('nSubmit').disabled = false;
-  $('nFeedback').hidden = true; $('nNextRow').hidden = true; $('nInput').focus({ preventScroll:true });
-}
-$('nForm').addEventListener('submit', e => {
-  e.preventDefault();
-  const raw = $('nInput').value.trim(); if (!raw) return;
-  const l = byNorm.get(norm(raw)), q = nQs[nRound];
-  const fb = $('nFeedback');
-  if (!l) { fb.hidden = false; fb.innerHTML = `<span class="bad">That's not a level on the list. Try again.</span>`; return; }
-  const sorted = q.fits.slice().sort((a,b) => a.r - b.r);
-  const idx = sorted.indexOf(l);
-  let pts = 0, line;
-  if (idx === -1) line = `<span class="pts bad">+0</span><span><b>${esc(l.n)}</b> doesn't fit.</span>`;
-  else {
-    pts = Math.round(100 * (sorted.length - idx) / sorted.length);
-    line = idx === 0 ? `<span class="pts good">+100</span><span>Perfect! <b>${esc(l.n)}</b> (#${l.r}) is the hardest that fits.</span>`
-                     : `<span class="pts near">+${pts}</span><span><b>${esc(l.n)}</b> (#${l.r}) fits. It's the #${idx+1} hardest of ${sorted.length}.</span>`;
-  }
-  nScore += pts;
-  fb.hidden = false;
-  fb.innerHTML = line + `<div class="answers">${sorted.map((s,i) => `<span class="chip ${i===0?'top':''} ${s===l?'you':''}">#${s.r} ${esc(s.n)}</span>`).join('')}</div>`;
-  $('nInput').disabled = true; $('nSubmit').disabled = true; $('nScore').textContent = nScore;
-  const last = nRound === 4;
-  if (last && nScore > nBest) { nBest = nScore; store.set('gg-name-best', nBest); }
-  $('nNext').textContent = last ? `Done · ${nScore}/500 · Play again` : 'Next';
-  $('nNextRow').hidden = false; $('nNext').focus({ preventScroll:true });
-});
-$('nNext').addEventListener('click', () => { if (nRound === 4) nStart(); else { nRound++; nShow(); } });
-nStart();
+].filter(q => Math.min(...q.fits.map(l => l.r)) > 5);
+PROMPTS.forEach(q => q.sorted = q.fits.slice().sort((a,b) => a.r - b.r));
 
+const TIME = 30, PENALTY = 3;
+
+/* seeded random so the daily is the same for everyone */
+function rng(seed){ let h = 1779033703 ^ seed.length; for (const ch of seed) { h = Math.imul(h ^ ch.charCodeAt(0), 3432918353); h = h << 13 | h >>> 19; }
+  return () => { h = Math.imul(h ^ h >>> 16, 2246822507); h = Math.imul(h ^ h >>> 13, 3266489909); h ^= h >>> 16; return (h >>> 0) / 4294967296; }; }
+function shuffle(a, r = Math.random){ a = a.slice(); for (let i = a.length-1; i > 0; i--) { const j = Math.floor(r()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; }
+function queue(r){ let out = []; while (out.length < 120) { let next = shuffle(PROMPTS, r); if (out.length && next[0] === out[out.length-1]) next.push(next.shift()); out = out.concat(next); } return out; }
+
+/* "did you mean" */
+function lev(a, b){ if (a === b) return 0; const m = a.length, n = b.length; if (!m || !n) return m || n;
+  let prev = Array.from({length:n+1}, (_, j) => j);
+  for (let i = 1; i <= m; i++) { const cur = [i]; for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j]+1, cur[j-1]+1, prev[j-1] + (a[i-1] === b[j-1] ? 0 : 1)); prev = cur; }
+  return prev[n]; }
+const WORDS = new Map(LV.map(l => [l, l.n.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)]));
+function suggest(raw){
+  const q = norm(raw); if (q.length < 3) return [];
+  const allow = q.length >= 8 ? 2 : q.length >= 4 ? 1 : 0;
+  const hits = [];
+  LV.forEach(l => {
+    const full = norm(l.n);
+    let d = full.includes(q) ? 0 : lev(q, full);
+    WORDS.get(l).forEach(w => { if (w.length >= 3) d = Math.min(d, w.startsWith(q) ? 0 : lev(q, w)); });
+    if (d <= allow) hits.push({ l, d });
+  });
+  return hits.sort((a,b) => a.d - b.d || a.l.r - b.l.r).slice(0, 3).map(h => h.l);
+}
+
+/* state */
+let mode = 'daily', qs = [], qi = 0, score = 0, left = TIME, endAt = 0, tick = null, running = false, log = [], pending = null;
+const show = id => ['sStart','sPlay','sEnd'].forEach(x => $(x).hidden = x !== id);
+function paintStats(){
+  const d = store.get('nth-daily-' + today(), null);
+  $('stDaily').textContent = d ? d.score : '–';
+  $('stBest').textContent = store.get('nth-best-practice', 0);
+  $('stBestDaily').textContent = store.get('nth-best-daily', 0);
+  $('mDaily').disabled = !!d;
+  $('mDailyTxt').textContent = d ? `You scored ${d.score} today. Next daily in ${untilMidnight()}.` : 'Same prompts for everyone today. One try, so you can compare scores.';
+}
+
+function start(m){
+  mode = m; qs = queue(m === 'daily' ? rng('nth-' + today()) : Math.random); qi = 0; score = 0; left = TIME; log = []; pending = null;
+  if (m === 'daily') store.set('nth-daily-' + today(), { score: 0, answered: 0, started: true });  // a refresh can't reroll it
+  $('pMode').textContent = m === 'daily' ? 'Daily · ' + today() : 'Practice';
+  $('pScore').textContent = 0; $('pCount').textContent = '0 answered'; $('pFlash').innerHTML = ''; $('pQ').innerHTML = '&nbsp;';
+  paintTime(); $('pInput').value = ''; $('pInput').disabled = true; $('pSubmit').disabled = true;
+  show('sPlay');
+  const c = $('count'); let n = 3; c.hidden = false;
+  const step = () => {
+    if (n > 0) { c.textContent = n; c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop'); n--; setTimeout(step, 1000); }
+    else { c.hidden = true; go(); }
+  };
+  step();
+}
+function go(){
+  running = true; endAt = performance.now() + TIME * 1000;
+  $('pInput').disabled = false; $('pSubmit').disabled = false; $('pInput').focus();
+  nextQ(false);
+  tick = setInterval(() => { left = Math.max(0, (endAt - performance.now()) / 1000); paintTime(); if (left <= 0) finish(); }, 100);
+}
+function paintTime(){
+  $('tNum').textContent = Math.ceil(left);
+  $('tBar').style.transform = `scaleX(${left / TIME})`;
+  $('tWrap').classList.toggle('low', left <= 5 && running);
+}
+function nextQ(advance = true){ if (advance) qi++; $('pQ').innerHTML = qs[qi].text; $('pInput').value = ''; pending = null; }
+
+function answer(l){
+  const q = qs[qi], idx = q.sorted.indexOf(l);
+  let pts = 0, html;
+  if (idx === -1) {
+    endAt -= PENALTY * 1000;
+    html = `<span class="pts bad">+0</span><b>${esc(l.n)}</b> doesn't fit<span class="penalty">−${PENALTY}s</span>`;
+  } else {
+    pts = Math.round(100 * (q.sorted.length - idx) / q.sorted.length);
+    html = idx === 0 ? `<span class="pts good">+100</span><b>${esc(l.n)}</b> was the hardest!`
+                     : `<span class="pts near">+${pts}</span><b>${esc(q.sorted[0].n)}</b> was the hardest`;
+  }
+  score += pts; log.push({ q, l, pts });
+  $('pScore').textContent = score; $('pCount').textContent = `${log.length} answered`;
+  $('pFlash').innerHTML = html;
+  nextQ();
+}
+
+$('pForm').addEventListener('submit', e => {
+  e.preventDefault(); if (!running) return;
+  const raw = $('pInput').value.trim(); if (!raw) return;
+  if (pending && pending.raw === raw) return answer(pending.opts[0]);   // Enter again = take the first suggestion
+  const l = byNorm.get(norm(raw));
+  if (l) return answer(l);
+  const opts = suggest(raw);
+  if (!opts.length) { pending = null; $('pFlash').innerHTML = `<span class="bad">That's not a level on the list.</span>`; return; }
+  pending = { raw, opts };
+  $('pFlash').innerHTML = `<div class="dym"><span>Did you mean</span>${opts.map((o,i) => `<button type="button" data-i="${i}">${esc(o.n)}</button>`).join('')}<span class="muted">Enter for the first one</span></div>`;
+});
+$('pFlash').addEventListener('click', e => {
+  const b = e.target.closest('button[data-i]'); if (!b || !pending || !running) return;
+  answer(pending.opts[+b.dataset.i]); $('pInput').focus();
+});
+
+function finish(){
+  if (!running) return; running = false; clearInterval(tick); left = 0; paintTime();
+  $('pInput').disabled = true; $('pSubmit').disabled = true;
+  const perfect = log.filter(x => x.pts === 100).length;
+  if (mode === 'daily') {
+    store.set('nth-daily-' + today(), { score, answered: log.length, perfect });
+    if (score > store.get('nth-best-daily', 0)) store.set('nth-best-daily', score);
+  } else if (score > store.get('nth-best-practice', 0)) store.set('nth-best-practice', score);
+  $('eMode').textContent = mode === 'daily' ? 'Daily · ' + today() : 'Practice';
+  $('eSub').textContent = 'Time!';
+  $('eScore').textContent = score;
+  $('eLine').textContent = `${log.length} answered · ${perfect} perfect`;
+  $('eShare').hidden = mode !== 'daily';
+  $('eShare').textContent = 'Copy score';
+  $('eRecap').innerHTML = log.map(x => {
+    const best = x.q.sorted[0];
+    const cls = x.pts === 100 ? 'good' : x.pts ? 'near' : 'bad';
+    return `<li><span class="pts ${cls}">${x.pts}</span><span>${x.q.text}<br><span class="muted">You: ${esc(x.l.n)}${x.pts === 100 ? '' : ` · Hardest: ${esc(best.n)} (#${best.r})`}</span></span></li>`;
+  }).join('') || '<li><span class="pts bad">0</span><span class="muted">No answers this time.</span></li>';
+  paintStats(); show('sEnd');
+}
+
+$('mDaily').addEventListener('click', () => start('daily'));
+$('mPractice').addEventListener('click', () => start('practice'));
+$('eAgain').addEventListener('click', () => start('practice'));
+$('eBack').addEventListener('click', () => { paintStats(); show('sStart'); });
+$('eShare').addEventListener('click', async () => {
+  const d = store.get('nth-daily-' + today(), {});
+  const txt = `Name the Hardest · Daily ${today()}\n${d.score} points · ${d.answered} answered · ${d.perfect} perfect`;
+  try { await navigator.clipboard.writeText(txt); $('eShare').textContent = 'Copied!'; }
+  catch { $('eShare').textContent = 'Couldn\'t copy'; }
+});
+paintStats();
 </script>
 </body>
 </html>
